@@ -17,6 +17,7 @@ vi.mock('./api.service', () => ({
     createMovie: vi.fn(),
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
+    rateMovie: vi.fn(),
   }
 }));
 
@@ -221,6 +222,67 @@ describe('Movies Store (Svelte 5 Runes)', () => {
       expect(moviesStore.mutating).toBe(false);
     });
   });
+
+  // ─── rateMovie ────────────────────────────────────────────────
+  describe('rateMovie()', () => {
+    it('debería actualizar el rating de una película correctamente', async () => {
+      // ARRANGE: cargamos películas sin rating
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const movie = moviesStore.movies[0]; // Inception, sin rating
+      const ratedMovie: Movie = { ...movie, rating: 4 };
+      vi.mocked(api.rateMovie).mockResolvedValue(ratedMovie);
+
+      // ACT
+      const ok = await moviesStore.rateMovie(movie, 4);
+
+      // ASSERT
+      expect(ok).toBe(true);
+      expect(movie.rating).toBe(4);
+      expect(api.rateMovie).toHaveBeenCalledWith('1', 4);
+    });
+
+    it('debería rechazar un rating mayor que 5', async () => {
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const movie = moviesStore.movies[0];
+      const ok = await moviesStore.rateMovie(movie, 6);
+
+      expect(ok).toBe(false);
+      expect(moviesStore.error).toBe('El rating debe estar entre 0 y 5');
+      expect(api.rateMovie).not.toHaveBeenCalled();
+    });
+
+    it('debería rechazar un rating negativo', async () => {
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const movie = moviesStore.movies[0];
+      const ok = await moviesStore.rateMovie(movie, -1);
+
+      expect(ok).toBe(false);
+      expect(moviesStore.error).toBe('El rating debe estar entre 0 y 5');
+      expect(api.rateMovie).not.toHaveBeenCalled();
+    });
+
+    it('debería hacer rollback si la API falla', async () => {
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const movie = moviesStore.movies[0];
+      const originalRating = movie.rating; // undefined
+      vi.mocked(api.rateMovie).mockRejectedValue(new Error('Server error'));
+
+      const ok = await moviesStore.rateMovie(movie, 3);
+
+      expect(ok).toBe(false);
+      expect(movie.rating).toBe(originalRating); // revertido
+      expect(moviesStore.error).toBe('Server error');
+    });
+  });
+
 });
 
 /**

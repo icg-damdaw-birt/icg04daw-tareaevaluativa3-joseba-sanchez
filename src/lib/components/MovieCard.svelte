@@ -1,17 +1,19 @@
 ﻿<script lang="ts">
-  import type { Movie } from '$lib/types';
+  import type { Movie } from "$lib/types";
 
   // Props con Svelte 5: sistema de tipos explícito y callbacks en lugar de eventos
-  let { 
+  let {
     movie,
     showActions = true,
     ondelete,
-    onedit
+    onedit,
+    onrate,
   }: {
     movie: Movie;
     showActions?: boolean;
     ondelete?: (id: string) => void;
     onedit?: (movie: Movie) => void;
+    onrate?: (movie: Movie, rating: number) => void;
   } = $props();
 
   // Handlers: ejecutan callbacks del padre directamente
@@ -25,7 +27,9 @@
 </script>
 
 <!-- Componente reutilizable: tarjeta para mostrar información de una película -->
-<article class="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+<article
+  class="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+>
   {#if movie.posterUrl}
     <div class="flex h-48 items-center justify-center bg-slate-100">
       <img
@@ -47,8 +51,24 @@
       {#if movie.year}
         <span>Año: {movie.year}</span>
       {/if}
-    </div>
 
+      <!-- Rating: 5 estrellas interactivas -->
+      <div class="mt-2 flex gap-1">
+        {#each [1, 2, 3, 4, 5] as star}
+          <button
+            type="button"
+            class="text-xl transition hover:scale-110 {star <=
+            (movie.rating ?? 0)
+              ? 'text-yellow-400'
+              : 'text-slate-300'}"
+            onclick={() => onrate?.(movie, star)}
+            aria-label="Puntuar con {star} estrellas"
+          >
+            ★
+          </button>
+        {/each}
+      </div>
+    </div>
     {#if showActions}
       <div class="mt-3 flex flex-col gap-2 sm:flex-row">
         <button
