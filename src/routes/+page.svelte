@@ -1,16 +1,18 @@
 ﻿<script lang="ts">
-  import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
-  import { authToken, moviesStore } from '$lib';
-  import MovieCard from '$lib/components/MovieCard.svelte';
-  import MovieForm from '$lib/components/MovieForm.svelte';
-  import type { Movie, MovieFormSubmit, MoviePayload } from '$lib/types';
+  import { authToken, moviesStore } from "$lib";
+  import MovieCard from "$lib/components/MovieCard.svelte";
+  import MovieForm from "$lib/components/MovieForm.svelte";
+  import type { Movie, MovieFormSubmit, MoviePayload } from "$lib/types";
 
   // Estado local de la página (concerns de UI, no de negocio)
   let editingMovie = $state<Movie | null>(null);
-  let feedbackMessage = $state<{ type: 'error' | 'info'; text: string } | null>(null);
+  let feedbackMessage = $state<{ type: "error" | "info"; text: string } | null>(
+    null,
+  );
 
   // Lifecycle: carga inicial solo en el navegador
   onMount(() => {
@@ -18,7 +20,7 @@
 
     // Guard de autenticación: redirige si no hay token
     if (!authToken.value) {
-      goto('/login');
+      goto("/login");
       return;
     }
 
@@ -29,14 +31,14 @@
   // Redirige automáticamente si se cierra sesión
   $effect(() => {
     if (browser && !authToken.value && !moviesStore.loading) {
-      goto('/login');
+      goto("/login");
     }
   });
 
   // Refleja errores del store en el feedback de la página
   $effect(() => {
     if (moviesStore.error) {
-      feedbackMessage = { type: 'error', text: moviesStore.error };
+      feedbackMessage = { type: "error", text: moviesStore.error };
     }
   });
 
@@ -52,14 +54,20 @@
       // Modo edición: actualiza película existente
       const ok = await moviesStore.updateMovie(id, payload);
       if (ok) {
-        feedbackMessage = { type: 'info', text: 'Película actualizada correctamente.' };
+        feedbackMessage = {
+          type: "info",
+          text: "Película actualizada correctamente.",
+        };
         editingMovie = null;
       }
     } else {
       // Modo creación: añade nueva película
       const ok = await moviesStore.createMovie(payload);
       if (ok) {
-        feedbackMessage = { type: 'info', text: 'Película guardada correctamente.' };
+        feedbackMessage = {
+          type: "info",
+          text: "Película guardada correctamente.",
+        };
       }
     }
   }
@@ -71,7 +79,7 @@
 
     const ok = await moviesStore.deleteMovie(id);
     if (ok) {
-      feedbackMessage = { type: 'info', text: 'Película eliminada.' };
+      feedbackMessage = { type: "info", text: "Película eliminada." };
     }
   }
 
@@ -80,6 +88,10 @@
     editingMovie = movie;
   }
 
+
+  async function handleRate(movie: Movie, rating: number) {
+    await moviesStore.rateMovie(movie, rating);
+  }
   // Limpia el formulario lateral y vuelve al modo de creación.
   function handleCancelEdit() {
     editingMovie = null;
@@ -90,16 +102,17 @@
   <div class="mb-8 max-w-3xl">
     <h1 class="text-3xl font-bold text-slate-900">Mi Videoteca</h1>
     <p class="text-slate-600">
-      Gestiona tu colección personal de películas favoritas de forma rápida y sin fricción.
+      Gestiona tu colección personal de películas favoritas de forma rápida y
+      sin fricción.
     </p>
   </div>
 
   {#if feedbackMessage}
     <div
       class={`mb-6 rounded border px-4 py-3 text-sm ${
-        feedbackMessage.type === 'error'
-          ? 'border-red-300 bg-red-50 text-red-700'
-          : 'border-green-300 bg-green-50 text-green-700'
+        feedbackMessage.type === "error"
+          ? "border-red-300 bg-red-50 text-red-700"
+          : "border-green-300 bg-green-50 text-green-700"
       }`}
     >
       {feedbackMessage.text}
@@ -109,35 +122,42 @@
   <div class="grid gap-8 lg:grid-cols-[2fr_1fr]">
     <div>
       {#if moviesStore.loading}
-        <div class="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+        <div
+          class="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm"
+        >
           Cargando películas...
         </div>
       {:else if moviesStore.movies.length === 0}
-        <div class="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500 shadow-sm">
-          Tu videoteca está vacía. Añade la primera película usando el formulario.
+        <div
+          class="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500 shadow-sm"
+        >
+          Tu videoteca está vacía. Añade la primera película usando el
+          formulario.
         </div>
       {:else}
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {#each moviesStore.movies as movie (movie.id)}
-            <MovieCard {movie} ondelete={handleDelete} onedit={handleEdit} />
+            <MovieCard {movie} ondelete={handleDelete} onedit={handleEdit} onrate={handleRate}/>
           {/each}
         </div>
       {/if}
     </div>
 
-    <aside class="h-fit rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <aside
+      class="h-fit rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+    >
       <h2 class="mb-2 text-xl font-semibold text-slate-900">
-        {editingMovie ? 'Editar película' : 'Nueva película'}
+        {editingMovie ? "Editar película" : "Nueva película"}
       </h2>
       <p class="mb-4 text-sm text-slate-500">
         {editingMovie
-          ? 'Actualiza los datos y guarda los cambios cuando estés listo.'
-          : 'Completa los datos y guárdalos para verlos en la lista.'}
+          ? "Actualiza los datos y guarda los cambios cuando estés listo."
+          : "Completa los datos y guárdalos para verlos en la lista."}
       </p>
       <MovieForm
         isSubmitting={moviesStore.mutating}
         bind:initialMovie={editingMovie}
-        submitLabel={editingMovie ? 'Guardar cambios' : 'Añadir película'}
+        submitLabel={editingMovie ? "Guardar cambios" : "Añadir película"}
         showCancel={Boolean(editingMovie)}
         onsubmit={handleFormSubmit}
         oncancel={handleCancelEdit}

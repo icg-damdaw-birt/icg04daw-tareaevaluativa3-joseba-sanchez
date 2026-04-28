@@ -82,7 +82,30 @@ export const moviesStore = {
       mutating = false;
     }
   },
+  // Puntuar película
+  async rateMovie(movie: Movie, rating: number): Promise<boolean> {
+    // Validación: rating debe estar entre 0 y 5
+    if (rating < 0 || rating > 5) {
+      error = 'El rating debe estar entre 0 y 5';
+      return false;
+    }
 
+    // Guardamos el valor anterior para poder hacer rollback
+    const previousRating = movie.rating;
+
+    // Optimistic update: cambiamos el valor localmente antes de llamar a la API
+    movie.rating = rating;
+
+    try {
+      await api.rateMovie(movie.id, rating);
+      return true;
+    } catch (err) {
+      // Rollback: revertimos al valor anterior si la API falla
+      movie.rating = previousRating;
+      error = err instanceof Error ? err.message : 'Error al puntuar película';
+      return false;
+    }
+  },
   // Limpiar estado completo
   reset() {
     movies = [];
