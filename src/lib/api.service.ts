@@ -1,4 +1,5 @@
 ﻿import { authToken } from './auth.store.svelte';
+import { PUBLIC_API_URL } from '$env/static/public';
 import type {
   ApiErrorPayload,
   Credentials,
@@ -45,7 +46,7 @@ function sanitizeBaseUrl(url: string): string {
 
 // ✅ Configuración para SvelteKit: usa PUBLIC_ prefix
 const API_BASE_URL = sanitizeBaseUrl(
-  import.meta.env.PUBLIC_API_URL ?? FALLBACK_API_URL
+  PUBLIC_API_URL ?? FALLBACK_API_URL
 );
 
 // Función central: wrapper genérico para todas las peticiones HTTP
@@ -129,3 +130,7 @@ export const api = {
   // TODO (UD4 - Video): toggleFavorite
   // TODO (UD4 - Ejercicio): rateMovie
 };
+
+
+
+
