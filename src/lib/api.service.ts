@@ -9,9 +9,6 @@ import type {
   RegisterPayload,
 } from './types';
 
-// Configuración base del servicio API
-const FALLBACK_API_URL = 'http://localhost:3000';
-
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 interface RequestOptions {
@@ -34,20 +31,19 @@ export class ApiError extends Error {
   }
 }
 
-// URL base: configurada desde variables de entorno con fallback
+// URL base: configurada desde variables de entorno
 function sanitizeBaseUrl(url: string): string {
   const trimmed = url.trim();
-  if (!trimmed) {
-    return FALLBACK_API_URL;
-  }
   // Elimina barras finales para evitar URLs malformadas
   return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
 }
 
 // ✅ Configuración para SvelteKit: usa PUBLIC_ prefix
-const API_BASE_URL = sanitizeBaseUrl(
-  PUBLIC_API_URL ?? FALLBACK_API_URL
-);
+const API_BASE_URL = sanitizeBaseUrl(PUBLIC_API_URL);
+
+if (!API_BASE_URL) {
+  throw new Error('PUBLIC_API_URL no está configurada. Revisa las variables de entorno.');
+}
 
 // Función central: wrapper genérico para todas las peticiones HTTP
 // Añade headers, autenticación y manejo de errores homogéneo
@@ -130,6 +126,7 @@ export const api = {
   // TODO (UD4 - Video): toggleFavorite
   // TODO (UD4 - Ejercicio): rateMovie
 };
+
 
 
 
