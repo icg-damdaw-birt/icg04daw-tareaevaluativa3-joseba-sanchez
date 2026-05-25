@@ -6,12 +6,14 @@
     movie,
     showActions = true,
     ondelete,
-    onedit
+    onedit,
+    onrate
   }: {
     movie: Movie;
     showActions?: boolean;
     ondelete?: (id: string) => void;
     onedit?: (movie: Movie) => void;
+    onrate?: (movie: Movie, rating: number) => void;
   } = $props();
 
   // Handlers: ejecutan callbacks del padre directamente
@@ -21,6 +23,10 @@
 
   function handleEdit() {
     onedit?.(movie);
+  }
+
+  function handleRate(rating: number) {
+    onrate?.(movie, rating);
   }
 </script>
 
@@ -42,6 +48,22 @@
       <h3 class="text-lg font-semibold text-slate-900">{movie.title}</h3>
       <p class="text-sm text-slate-600">Dirigida por {movie.director}</p>
     </header>
+
+    <div class="flex items-center gap-1" aria-label={`Puntuación actual: ${movie.rating ?? 0} de 5`}>
+      {#each [1, 2, 3, 4, 5] as star}
+        <button
+          type="button"
+          class={`text-xl leading-none transition-colors ${
+            star <= (movie.rating ?? 0) ? 'text-amber-400' : 'text-slate-300 hover:text-amber-300'
+          }`}
+          aria-label={`Puntuar con ${star} estrella${star === 1 ? '' : 's'}`}
+          title={`Puntuar con ${star}`}
+          onclick={() => handleRate(star)}
+        >
+          {star <= (movie.rating ?? 0) ? '⭐' : '☆'}
+        </button>
+      {/each}
+    </div>
 
     <div class="mt-auto text-sm text-slate-500">
       {#if movie.year}
