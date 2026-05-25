@@ -17,6 +17,7 @@ vi.mock('./api.service', () => ({
     createMovie: vi.fn(),
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
+    rateMovie: vi.fn(),
   }
 }));
 
@@ -219,6 +220,65 @@ describe('Movies Store (Svelte 5 Runes)', () => {
       expect(ok).toBe(false);
       expect(moviesStore.error).toBe('Forbidden');
       expect(moviesStore.mutating).toBe(false);
+    });
+  });
+
+  // ─── rateMovie ────────────────────────────────────────────────
+  describe('rateMovie()', () => {
+    it('debería guardar una puntuación válida y actualizar la película', async () => {
+      // ARRANGE
+      const moviesWithoutRating: Movie[] = [
+        { id: '1', title: 'Inception', director: 'Christopher Nolan', year: 2010 },
+      ];
+      vi.mocked(api.getMovies).mockResolvedValue([...moviesWithoutRating]);
+      await moviesStore.loadMovies();
+
+      const ratedMovie: Movie = { ...moviesWithoutRating[0], rating: 4 };
+      vi.mocked(api.rateMovie).mockResolvedValue(ratedMovie);
+
+      // ACT
+      const movie = moviesStore.movies.find((m) => m.id === '1')!;
+      const ok = await moviesStore.rateMovie(movie, 4);
+
+      // ASSERT
+      expect(ok).toBe(true);
+      expect(api.rateMovie).toHaveBeenCalledWith('1', 4);
+      expect(moviesStore.movies.find((m) => m.id === '1')?.rating).toBe(4);
+    });
+
+    it('debería rechazar ratings fuera de rango', async () => {
+      // ARRANGE
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const movie = moviesStore.movies[0];
+
+      // ACT
+      const ok = await moviesStore.rateMovie(movie, 9);
+
+      // ASSERT
+      expect(ok).toBe(false);
+      expect(api.rateMovie).not.toHaveBeenCalled();
+      expect(moviesStore.error).toBe('La puntuación debe ser un entero entre 0 y 5');
+    });
+
+    it('debería hacer rollback si la API falla al puntuar', async () => {
+      // ARRANGE
+      const moviesWithRating: Movie[] = [
+        { id: '1', title: 'Inception', director: 'Christopher Nolan', year: 2010, rating: 2 },
+      ];
+      vi.mocked(api.getMovies).mockResolvedValue([...moviesWithRating]);
+      await moviesStore.loadMovies();
+      vi.mocked(api.rateMovie).mockRejectedValue(new Error('No se pudo guardar el rating'));
+
+      // ACT
+      const movie = moviesStore.movies[0];
+      const ok = await moviesStore.rateMovie(movie, 5);
+
+      // ASSERT
+      expect(ok).toBe(false);
+      expect(moviesStore.movies.find((m) => m.id === '1')?.rating).toBe(2);
+      expect(moviesStore.error).toBe('No se pudo guardar el rating');
     });
   });
 });
